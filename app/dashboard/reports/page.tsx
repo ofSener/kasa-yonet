@@ -38,16 +38,49 @@ export default function ReportsPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data } = await supabase
-      .from('transactions')
-      .select('*, categories(name, color)')
-      .eq('user_id', user.id)
-      .gte('transaction_date', startDate)
-      .lte('transaction_date', endDate)
-      .order('transaction_date', { ascending: true })
+    const selectedCompanyId = localStorage.getItem('selectedCompanyId')
+    if (!selectedCompanyId) return
 
-    if (data) {
-      setTransactions(data)
+    console.log('📊 DEBUG: Fetching reports for company:', selectedCompanyId, 'date range:', startDate, 'to', endDate)
+
+    // Şirket bazlı işlemleri getir (tüm takım)
+    const { data: transactionData, error } = await supabase.rpc(
+      'get_company_transactions_with_users',
+      { company_uuid: selectedCompanyId }
+    )
+
+    console.log('📊 DEBUG: Reports fetch result:', { transactionData, error })
+
+    if (error) {
+      console.error('Reports fetch error:', error)
+    } else if (transactionData) {
+      // Tarih filtreleme uygula ve format dönüştür
+      const filteredTransactions = transactionData
+        .filter((t: any) => 
+          t.transaction_date >= startDate && 
+          t.transaction_date <= endDate
+        )
+        .map((t: any) => ({
+          id: t.id,
+          amount: t.amount,
+          type: t.type,
+          description: t.description,
+          category_id: t.category_id,
+          transaction_date: t.transaction_date,
+          created_at: t.created_at,
+          categories: t.category_name ? {
+            name: t.category_name,
+            color: t.category_color
+          } : null,
+          created_by_user: {
+            email: t.created_by_email,
+            full_name: t.created_by_name
+          }
+        }))
+        .sort((a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime())
+
+      console.log('📊 DEBUG: Filtered and formatted transactions:', filteredTransactions)
+      setTransactions(filteredTransactions)
     }
     setLoading(false)
   }
@@ -143,13 +176,14 @@ export default function ReportsPage() {
   }
 
   const exportToCSV = () => {
-    const headers = ['Tarih', 'Tip', 'Kategori', 'Açıklama', 'Tutar']
+    const headers = ['Tarih', 'Tip', 'Kategori', 'Açıklama', 'Tutar', 'Ekleyen']
     const rows = transactions.map(t => [
       t.transaction_date,
       t.type === 'income' ? 'Gelir' : 'Gider',
       t.categories?.name || '-',
       t.description || '-',
-      t.amount
+      t.amount,
+      (t as any).created_by_user ? `${(t as any).created_by_user.full_name || 'İsimsiz'} (${(t as any).created_by_user.email})` : '-'
     ])
 
     const csvContent = [
@@ -160,7 +194,7 @@ export default function ReportsPage() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    link.download = `rapor_${startDate}_${endDate}.csv`
+    link.download = `takım_raporu_${startDate}_${endDate}.csv`
     link.click()
   }
 
@@ -182,13 +216,16 @@ export default function ReportsPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Raporlar</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Takım Raporları</h1>
+          <p className="text-gray-600 text-sm mt-1">Tüm takım üyelerinin işlemleri dahil</p>
+        </div>
         <button
           onClick={exportToCSV}
           className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
         >
           <FileDown className="h-5 w-5 mr-2" />
-          CSV İndir
+          Takım Raporu İndir
         </button>
       </div>
 
