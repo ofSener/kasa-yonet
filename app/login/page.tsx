@@ -1,18 +1,35 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { LogIn, Mail, Lock } from 'lucide-react'
+import { LogIn, Mail, Lock, CheckCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false)
+  const [showPasswordReset, setShowPasswordReset] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+
+  useEffect(() => {
+    if (searchParams.get('emailConfirmation') === 'true') {
+      setShowEmailConfirmation(true)
+    }
+    if (searchParams.get('passwordReset') === 'true') {
+      setShowPasswordReset(true)
+      // Hide message after 5 seconds
+      setTimeout(() => {
+        setShowPasswordReset(false)
+        router.replace('/login')
+      }, 5000)
+    }
+  }, [searchParams, router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,6 +65,41 @@ export default function LoginPage() {
           <h2 className="text-3xl font-bold text-gray-900">Hoş Geldiniz</h2>
           <p className="mt-2 text-gray-600">Kasa takip uygulamanıza giriş yapın</p>
         </div>
+
+        {showEmailConfirmation && (
+          <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+            <div className="flex items-start">
+              <CheckCircle className="h-6 w-6 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-semibold text-green-800 mb-1">
+                  Kayıt Başarılı! 🎉
+                </h3>
+                <p className="text-sm text-green-700">
+                  Hesabınızı aktifleştirmek için lütfen e-posta adresinize gönderdiğimiz doğrulama linkine tıklayın.
+                </p>
+                <p className="text-xs text-green-600 mt-2">
+                  ⚡ E-posta birkaç dakika içinde ulaşmazsa spam klasörünüzü kontrol edin.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showPasswordReset && (
+          <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start">
+              <CheckCircle className="h-6 w-6 text-blue-500 mt-0.5 mr-3 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-semibold text-blue-800 mb-1">
+                  Şifreniz Güncellendi! 🔐
+                </h3>
+                <p className="text-sm text-blue-700">
+                  Yeni şifrenizle giriş yapabilirsiniz.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           {error && (
@@ -110,6 +162,12 @@ export default function LoginPage() {
             >
               {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
             </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Link href="/forgot-password" className="text-sm text-indigo-600 hover:text-indigo-500">
+              Şifremi Unuttum
+            </Link>
           </div>
 
           <div className="text-center">

@@ -21,6 +21,7 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
+      const siteUrl = window.location.origin
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -28,12 +29,13 @@ export default function SignupPage() {
           data: {
             full_name: fullName,
           },
+          emailRedirectTo: `${siteUrl}/login`,
         },
       })
 
       if (error) throw error
 
-      router.push('/dashboard')
+      router.push('/login?emailConfirmation=true')
       router.refresh()
     } catch (error: any) {
       setError(error.message || 'Kayıt olurken bir hata oluştu')

@@ -35,14 +35,23 @@ export default function CategoriesPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data } = await supabase
+    const companyId = localStorage.getItem('selectedCompanyId')
+    if (!companyId) {
+      setLoading(false)
+      return
+    }
+
+    const { data, error } = await supabase
       .from('categories')
       .select('*')
       .eq('user_id', user.id)
+      .eq('company_id', companyId)
       .order('type')
       .order('name')
 
-    if (data) {
+    if (error) {
+      console.error('Kategori listeleme hatası:', error)
+    } else if (data) {
       setCategories(data)
     }
     setLoading(false)
@@ -54,16 +63,27 @@ export default function CategoriesPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
+    // Get current company from localStorage or context
+    const companyId = localStorage.getItem('selectedCompanyId')
+    if (!companyId) {
+      alert('Lütfen önce bir şirket seçin!')
+      return
+    }
+
     const { error } = await supabase
       .from('categories')
       .insert({
         name: formData.name,
         type: formData.type,
         color: formData.color,
-        user_id: user.id
+        user_id: user.id,
+        company_id: companyId
       })
 
-    if (!error) {
+    if (error) {
+      console.error('Kategori ekleme hatası:', error)
+      alert('Kategori eklenirken bir hata oluştu: ' + error.message)
+    } else {
       setFormData({ name: '', type: 'expense', color: '#6366f1' })
       setShowAddForm(false)
       fetchCategories()

@@ -48,7 +48,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       .select('*, companies(*)')
       .eq('user_id', user.id)
 
-    if (memberships) {
+    if (memberships && memberships.length > 0) {
       const companiesList = memberships.map(m => m.companies).filter(Boolean) as Company[]
       setCompanies(companiesList)
 
@@ -61,6 +61,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       } else if (companiesList.length > 0) {
         handleSetCurrentCompany(companiesList[0])
       }
+    } else {
+      // Kullanıcının hiç şirketi yoksa /company/setup sayfasına yönlendir
+      router.push('/company/setup')
     }
   }
 
