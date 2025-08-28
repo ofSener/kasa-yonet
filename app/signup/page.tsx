@@ -29,7 +29,7 @@ export default function SignupPage() {
           data: {
             full_name: fullName,
           },
-          emailRedirectTo: `${siteUrl}/login`,
+          emailRedirectTo: `${siteUrl}/auth/confirm`,
         },
       })
 
