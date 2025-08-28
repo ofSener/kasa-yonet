@@ -91,24 +91,30 @@ export default function TeamPage() {
         setCompany(companyData)
       }
 
-      // Takım üyelerini getir
-      const { data: membersData } = await supabase
-        .from('company_members')
-        .select(`
-          id,
-          user_id,
-          role,
-          joined_at,
-          user:user_profiles!user_id (
-            email,
-            full_name
-          )
-        `)
-        .eq('company_id', companyId)
-        .order('joined_at', { ascending: true })
+      // Takım üyelerini getir - Function kullanarak
+      const { data: membersData, error: membersError } = await supabase.rpc(
+        'get_company_members_with_users',
+        { company_uuid: companyId }
+      )
 
-      if (membersData) {
-        setMembers(membersData as any)
+      console.log('👥 DEBUG: Team members fetch result:', { membersData, membersError })
+
+      if (membersError) {
+        console.error('Team members fetch error:', membersError)
+      } else if (membersData) {
+        // Function'dan gelen veriyi beklenen formata dönüştür
+        const formattedMembers = membersData.map((member: any) => ({
+          id: member.id,
+          user_id: member.user_id,
+          role: member.role,
+          joined_at: member.joined_at,
+          user: {
+            email: member.user_email,
+            full_name: member.user_full_name
+          }
+        }))
+        console.log('👥 DEBUG: Formatted members:', formattedMembers)
+        setMembers(formattedMembers)
       }
     } catch (error) {
       console.error('Takım verileri yüklenirken hata:', error)

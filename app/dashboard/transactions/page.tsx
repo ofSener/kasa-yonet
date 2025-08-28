@@ -34,16 +34,43 @@ export default function TransactionsPage() {
     const selectedCompanyId = localStorage.getItem('selectedCompanyId')
     if (!selectedCompanyId) return
 
-    const { data, error } = await supabase
-      .from('transactions')
-      .select('*, categories(name, color)')
-      .eq('company_id', selectedCompanyId)
-      .order('transaction_date', { ascending: false })
-      .order('created_at', { ascending: false })
+    // Function kullanarak user bilgileri ile birlikte transactions'ı getir
+    const { data, error } = await supabase.rpc(
+      'get_company_transactions_with_users',
+      { company_uuid: selectedCompanyId }
+    )
 
-    if (data) {
-      setTransactions(data)
-      setFilteredTransactions(data)
+    console.log('💰 DEBUG: Transactions fetch result:', { data, error })
+
+    if (error) {
+      console.error('Transactions fetch error:', error)
+    } else if (data) {
+      // Function'dan gelen veriyi beklenen formata dönüştür
+      const formattedTransactions = data.map((transaction: any) => ({
+        id: transaction.id,
+        amount: transaction.amount,
+        type: transaction.type,
+        description: transaction.description,
+        category_id: transaction.category_id,
+        user_id: transaction.user_id,
+        company_id: transaction.company_id,
+        created_by: transaction.created_by,
+        transaction_date: transaction.transaction_date,
+        created_at: transaction.created_at,
+        updated_at: transaction.updated_at,
+        categories: transaction.category_name ? {
+          name: transaction.category_name,
+          color: transaction.category_color
+        } : null,
+        created_by_user: {
+          email: transaction.created_by_email,
+          full_name: transaction.created_by_name
+        }
+      }))
+      
+      console.log('💰 DEBUG: Formatted transactions:', formattedTransactions)
+      setTransactions(formattedTransactions)
+      setFilteredTransactions(formattedTransactions)
     }
     setLoading(false)
   }
@@ -210,6 +237,9 @@ export default function TransactionsPage() {
                   Tutar
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ekleyen
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   İşlemler
                 </th>
               </tr>
@@ -253,6 +283,20 @@ export default function TransactionsPage() {
                         {transaction.type === 'income' ? '+' : '-'}₺{Number(transaction.amount).toFixed(2)}
                       </span>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {(transaction as any).created_by_user ? (
+                        <div>
+                          <div className="font-medium">
+                            {(transaction as any).created_by_user.full_name || 'İsimsiz'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {(transaction as any).created_by_user.email}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-gray-500">-</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button
                         onClick={() => handleDelete(transaction.id)}
@@ -265,7 +309,7 @@ export default function TransactionsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                     İşlem bulunamadı
                   </td>
                 </tr>

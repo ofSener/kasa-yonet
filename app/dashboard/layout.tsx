@@ -200,7 +200,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     { href: '/dashboard/transactions', label: 'İşlemler', icon: List },
     { href: '/dashboard/transactions/new', label: 'Ekle', icon: Plus, isSpecial: true },
     { href: '/dashboard/reports', label: 'Raporlar', icon: TrendingUp },
-    { href: '/dashboard/profile', label: 'Profil', icon: User },
+    { href: '/dashboard/team', label: 'Takım', icon: Users },
   ]
 
   if (isMobile) {

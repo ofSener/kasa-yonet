@@ -45,12 +45,26 @@ export default function DashboardPage() {
 
       const today = new Date().toISOString().split('T')[0]
       
-      // Şirket bazlı işlemleri getir
-      const { data: transactions } = await supabase
-        .from('transactions')
-        .select('*, categories(name, color)')
-        .eq('company_id', selectedCompanyId)
-        .order('transaction_date', { ascending: false })
+      // Şirket bazlı işlemleri getir - Function kullan (RLS permission için)
+      const { data: transactionData } = await supabase.rpc(
+        'get_company_transactions_with_users',
+        { company_uuid: selectedCompanyId }
+      )
+
+      // Function'dan gelen veriyi eski formata dönüştür
+      const transactions = transactionData?.map((t: any) => ({
+        id: t.id,
+        amount: t.amount,
+        type: t.type,
+        description: t.description,
+        category_id: t.category_id,
+        transaction_date: t.transaction_date,
+        created_at: t.created_at,
+        categories: t.category_name ? {
+          name: t.category_name,
+          color: t.category_color
+        } : null
+      })) || []
 
       if (transactions) {
         const totalIncome = transactions
