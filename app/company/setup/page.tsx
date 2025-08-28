@@ -61,6 +61,10 @@ export default function CompanySetupPage() {
         company_uuid: company.id 
       })
 
+      // Yeni şirketi localStorage'a kaydet ki dashboard'da doğru şirket seçilsin
+      localStorage.setItem('selectedCompanyId', company.id)
+
+      // Dashboard'a git ve sayfayı yenile
       router.push('/dashboard')
       router.refresh()
     } catch (error: any) {
@@ -95,16 +99,25 @@ export default function CompanySetupPage() {
         throw new Error('Geçersiz veya süresi dolmuş davet kodu')
       }
 
-      // Zaten üye mi kontrol et
-      const { data: existingMember } = await supabase
-        .from('company_members')
-        .select('id')
-        .eq('company_id', company.id)
-        .eq('user_id', user.id)
-        .single()
+      // Zaten üye mi kontrol et - RLS nedeniyle hata verebilir, o yüzden try-catch ile sardım
+      try {
+        const { data: existingMember, error: memberCheckError } = await supabase
+          .from('company_members')
+          .select('id')
+          .eq('company_id', company.id)
+          .eq('user_id', user.id)
+          .single()
 
-      if (existingMember) {
-        throw new Error('Zaten bu şirketin üyesisiniz')
+        // RLS hatası değilse ve üyelik varsa
+        if (existingMember && !memberCheckError) {
+          throw new Error('Zaten bu şirketin üyesisiniz')
+        }
+      } catch (checkError: any) {
+        // RLS hatası değilse ve duplicate üyelik hatası ise
+        if (checkError.message && checkError.message.includes('Zaten bu şirketin üyesisiniz')) {
+          throw checkError
+        }
+        // Diğer durumlar (RLS hatası gibi) için devam et
       }
 
       // Üye olarak ekle
@@ -116,7 +129,16 @@ export default function CompanySetupPage() {
           role: 'user'
         })
 
-      if (memberError) throw memberError
+      // Duplicate key hatası için özel mesaj
+      if (memberError) {
+        if (memberError.code === '23505' && memberError.message.includes('company_members_company_id_user_id_key')) {
+          throw new Error('Zaten bu şirketin üyesisiniz')
+        }
+        throw memberError
+      }
+
+      // Katıldığımız şirketi localStorage'a kaydet
+      localStorage.setItem('selectedCompanyId', company.id)
 
       router.push('/dashboard')
       router.refresh()

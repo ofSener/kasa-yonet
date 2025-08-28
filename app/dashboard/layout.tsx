@@ -55,25 +55,32 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         .select('company_id, role')
         .eq('user_id', user.id)
 
-      if (memberError) {
+      // RLS hatası olsa bile, veri yoksa değil de gerçek hata varsa setup'a gönder
+      if (memberError && memberError.code !== 'PGRST116') { // PGRST116 = no rows found
         console.error('Membership fetch error:', memberError)
-        // Hata durumunda company setup'a yönlendir
-        router.push('/company/setup')
-        return
+        // Sadece kritik hatalarda setup'a yönlendir
+        if (memberError.code === '42501' || memberError.message.includes('permission')) {
+          router.push('/company/setup')
+          return
+        }
       }
 
       if (memberships && memberships.length > 0) {
         // Şirket bilgilerini ayrıca al
         const companyIds = memberships.map((m: any) => m.company_id)
+        
         const { data: companiesData, error: companiesError } = await supabase
           .from('companies')
           .select('id, name')
           .in('id', companyIds)
 
-        if (companiesError) {
+        if (companiesError && companiesError.code !== 'PGRST116') {
           console.error('Companies fetch error:', companiesError)
-          router.push('/company/setup')
-          return
+          // Sadece kritik hatalarda setup'a yönlendir
+          if (companiesError.code === '42501' || companiesError.message.includes('permission')) {
+            router.push('/company/setup')
+            return
+          }
         }
 
         if (companiesData && companiesData.length > 0) {
@@ -89,11 +96,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             handleSetCurrentCompany(companiesData[0])
           }
         } else {
-          // Şirket bilgileri alınamazsa setup'a yönlendir
           router.push('/company/setup')
         }
       } else {
-        // Kullanıcının hiç şirketi yoksa /company/setup sayfasına yönlendir
         router.push('/company/setup')
       }
     } catch (error) {

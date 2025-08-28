@@ -31,10 +31,13 @@ export default function TransactionsPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
+    const selectedCompanyId = localStorage.getItem('selectedCompanyId')
+    if (!selectedCompanyId) return
+
     const { data, error } = await supabase
       .from('transactions')
       .select('*, categories(name, color)')
-      .eq('user_id', user.id)
+      .eq('company_id', selectedCompanyId)
       .order('transaction_date', { ascending: false })
       .order('created_at', { ascending: false })
 
@@ -49,10 +52,13 @@ export default function TransactionsPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
+    const selectedCompanyId = localStorage.getItem('selectedCompanyId')
+    if (!selectedCompanyId) return
+
     const { data } = await supabase
       .from('categories')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('company_id', selectedCompanyId)
       .order('name')
 
     if (data) {

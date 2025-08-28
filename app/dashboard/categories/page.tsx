@@ -44,7 +44,6 @@ export default function CategoriesPage() {
     const { data, error } = await supabase
       .from('categories')
       .select('*')
-      .eq('user_id', user.id)
       .eq('company_id', companyId)
       .order('type')
       .order('name')

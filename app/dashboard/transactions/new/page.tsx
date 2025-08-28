@@ -27,10 +27,13 @@ export default function NewTransactionPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
+    const selectedCompanyId = localStorage.getItem('selectedCompanyId')
+    if (!selectedCompanyId) return
+
     const { data, error } = await supabase
       .from('categories')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('company_id', selectedCompanyId)
       .eq('type', type)
       .order('name')
 
@@ -51,10 +54,15 @@ export default function NewTransactionPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Kullanıcı bulunamadı')
 
+      const selectedCompanyId = localStorage.getItem('selectedCompanyId')
+      if (!selectedCompanyId) throw new Error('Şirket seçilmemiş')
+
       const { error } = await supabase
         .from('transactions')
         .insert({
           user_id: user.id,
+          company_id: selectedCompanyId,
+          created_by: user.id,
           type,
           amount: parseFloat(amount),
           description,
