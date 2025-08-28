@@ -30,24 +30,42 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Kullanıcının üyesi olduğu şirketleri getir
-      const { data: memberships } = await supabase
+      // Kullanıcının üyesi olduğu şirketleri getir - İki aşamalı sorgu ile daha güvenilir
+      const { data: memberships, error: memberError } = await supabase
         .from('company_members')
-        .select('*, companies(*)')
+        .select('company_id, role')
         .eq('user_id', user.id)
 
-      if (memberships) {
-        const companiesList = memberships.map(m => m.companies).filter(Boolean) as Company[]
-        setCompanies(companiesList)
+      if (memberError) {
+        console.error('Membership fetch error:', memberError)
+        return
+      }
 
-        // LocalStorage'dan son seçilen şirketi al veya ilkini seç
-        const savedCompanyId = localStorage.getItem('selectedCompanyId')
-        const savedCompany = companiesList.find(c => c.id === savedCompanyId)
-        
-        if (savedCompany) {
-          handleSetCurrentCompany(savedCompany)
-        } else if (companiesList.length > 0) {
-          handleSetCurrentCompany(companiesList[0])
+      if (memberships && memberships.length > 0) {
+        // Şirket bilgilerini ayrıca al
+        const companyIds = memberships.map((m: any) => m.company_id)
+        const { data: companiesData, error: companiesError } = await supabase
+          .from('companies')
+          .select('id, name, owner_id')
+          .in('id', companyIds)
+
+        if (companiesError) {
+          console.error('Companies fetch error:', companiesError)
+          return
+        }
+
+        if (companiesData && companiesData.length > 0) {
+          setCompanies(companiesData)
+
+          // LocalStorage'dan son seçilen şirketi al veya ilkini seç
+          const savedCompanyId = localStorage.getItem('selectedCompanyId')
+          const savedCompany = companiesData.find((c: any) => c.id === savedCompanyId)
+          
+          if (savedCompany) {
+            handleSetCurrentCompany(savedCompany)
+          } else {
+            handleSetCurrentCompany(companiesData[0])
+          }
         }
       }
     } catch (error) {
@@ -72,7 +90,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (member) {
-        setUserRole(member.role as 'owner' | 'admin' | 'user')
+        setUserRole((member as any).role as 'owner' | 'admin' | 'user')
       }
     }
   }
