@@ -27,8 +27,11 @@ export default function CompanySetupPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Kullanıcı bulunamadı')
+      
+      console.log('🏢 DEBUG: Creating company for user:', user.id, user.email)
 
       // Şirketi oluştur
+      console.log('🏢 DEBUG: Inserting company:', { name: companyName, owner_id: user.id })
       const { data: company, error: companyError } = await supabase
         .from('companies')
         .insert({
@@ -38,9 +41,15 @@ export default function CompanySetupPage() {
         .select()
         .single()
 
+      console.log('🏢 DEBUG: Company creation result:', { company, companyError })
       if (companyError) throw companyError
 
       // Sahibi member olarak ekle
+      console.log('👤 DEBUG: Adding owner as member:', { 
+        company_id: company.id, 
+        user_id: user.id, 
+        role: 'owner' 
+      })
       const { error: memberError } = await supabase
         .from('company_members')
         .insert({
@@ -49,22 +58,27 @@ export default function CompanySetupPage() {
           role: 'owner'
         })
 
+      console.log('👤 DEBUG: Member insertion result:', { memberError })
       if (memberError) throw memberError
 
       // Varsayılan kategorileri oluştur
+      console.log('📁 DEBUG: Creating default categories for company:', company.id)
       await supabase.rpc('create_company_default_categories', { 
         company_uuid: company.id 
       })
 
       // İlk davet kodunu oluştur
+      console.log('🎟️ DEBUG: Creating invite code for company:', company.id)
       await supabase.rpc('refresh_invite_code', { 
         company_uuid: company.id 
       })
 
       // Yeni şirketi localStorage'a kaydet ki dashboard'da doğru şirket seçilsin
+      console.log('💾 DEBUG: Saving company to localStorage:', company.id)
       localStorage.setItem('selectedCompanyId', company.id)
 
       // Dashboard'a git ve sayfayı yenile
+      console.log('🚀 DEBUG: Redirecting to dashboard')
       router.push('/dashboard')
       router.refresh()
     } catch (error: any) {

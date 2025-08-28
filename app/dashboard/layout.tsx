@@ -49,56 +49,100 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     if (!user) return
 
     try {
+      console.log('🔍 DEBUG: Starting fetchUserCompanies for user:', user.id)
+      console.log('🔍 DEBUG: User email:', user.email)
+      
       // Kullanıcının şirketlerini getir - İki aşamalı sorgu ile daha güvenilir
       const { data: memberships, error: memberError } = await supabase
         .from('company_members')
         .select('company_id, role')
         .eq('user_id', user.id)
 
+      console.log('🔍 DEBUG: Membership query result:', {
+        memberships, 
+        memberError,
+        errorCode: memberError?.code,
+        errorMessage: memberError?.message
+      })
+
       // RLS hatası olsa bile, veri yoksa değil de gerçek hata varsa setup'a gönder
-      if (memberError && memberError.code !== 'PGRST116') { // PGRST116 = no rows found
-        console.error('Membership fetch error:', memberError)
-        // Sadece kritik hatalarda setup'a yönlendir
-        if (memberError.code === '42501' || memberError.message.includes('permission')) {
-          router.push('/company/setup')
-          return
+      if (memberError) {
+        console.error('❌ DEBUG: Membership fetch error details:', {
+          code: memberError.code,
+          message: memberError.message,
+          details: memberError.details,
+          hint: memberError.hint
+        })
+        
+        // PGRST116 = no rows found, bu normal bir durum
+        if (memberError.code !== 'PGRST116') {
+          console.log('❌ DEBUG: Not a "no rows" error, checking if permission error')
+          if (memberError.code === '42501' || memberError.message.includes('permission')) {
+            console.log('❌ DEBUG: Permission error detected, redirecting to setup')
+            router.push('/company/setup')
+            return
+          }
+        } else {
+          console.log('💡 DEBUG: This is just "no rows found" error, continuing...')
         }
       }
 
       if (memberships && memberships.length > 0) {
+        console.log('✅ DEBUG: Found memberships:', memberships)
         // Şirket bilgilerini ayrıca al
         const companyIds = memberships.map((m: any) => m.company_id)
+        console.log('🔍 DEBUG: Getting companies for IDs:', companyIds)
         
         const { data: companiesData, error: companiesError } = await supabase
           .from('companies')
           .select('id, name')
           .in('id', companyIds)
 
-        if (companiesError && companiesError.code !== 'PGRST116') {
-          console.error('Companies fetch error:', companiesError)
-          // Sadece kritik hatalarda setup'a yönlendir
-          if (companiesError.code === '42501' || companiesError.message.includes('permission')) {
-            router.push('/company/setup')
-            return
+        console.log('🔍 DEBUG: Companies query result:', {
+          companiesData, 
+          companiesError
+        })
+
+        if (companiesError) {
+          console.error('❌ DEBUG: Companies fetch error details:', {
+            code: companiesError.code,
+            message: companiesError.message,
+            details: companiesError.details,
+            hint: companiesError.hint
+          })
+          
+          if (companiesError.code !== 'PGRST116') {
+            if (companiesError.code === '42501' || companiesError.message.includes('permission')) {
+              console.log('❌ DEBUG: Companies permission error, redirecting to setup')
+              router.push('/company/setup')
+              return
+            }
           }
         }
 
         if (companiesData && companiesData.length > 0) {
+          console.log('✅ DEBUG: Setting companies data:', companiesData)
           setCompanies(companiesData)
 
           // LocalStorage'dan son seçilen şirketi al
           const savedCompanyId = localStorage.getItem('selectedCompanyId')
+          console.log('🔍 DEBUG: Saved company ID from localStorage:', savedCompanyId)
+          
           const savedCompany = companiesData.find((c: any) => c.id === savedCompanyId)
           
           if (savedCompany) {
+            console.log('✅ DEBUG: Using saved company:', savedCompany)
             handleSetCurrentCompany(savedCompany)
           } else {
+            console.log('✅ DEBUG: Using first company:', companiesData[0])
             handleSetCurrentCompany(companiesData[0])
           }
         } else {
+          console.log('❌ DEBUG: No companies data found, redirecting to setup')
           router.push('/company/setup')
         }
       } else {
+        console.log('❌ DEBUG: No memberships found, redirecting to setup')
         router.push('/company/setup')
       }
     } catch (error) {
