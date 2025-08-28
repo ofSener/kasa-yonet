@@ -1,36 +1,117 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kasa Takip Uygulaması
 
-## Getting Started
+Modern, kullanıcı dostu online kasa takip uygulaması. İşletmenizin gelir ve giderlerini kolayca takip edin, detaylı raporlar alın.
 
-First, run the development server:
+## Özellikler
+
+- ✅ Kullanıcı kayıt ve giriş sistemi
+- ✅ Gelir/Gider ekleme, düzenleme ve silme
+- ✅ Kategorilere göre organize etme
+- ✅ Tarih bazlı filtreleme ve arama
+- ✅ Detaylı raporlar ve grafikler
+- ✅ CSV formatında dışa aktarım
+- ✅ Responsive tasarım (mobil uyumlu)
+- ✅ Gerçek zamanlı bakiye takibi
+
+## Teknolojiler
+
+- **Frontend:** Next.js 14, React, TypeScript
+- **Styling:** Tailwind CSS
+- **Backend:** Supabase (PostgreSQL)
+- **Authentication:** Supabase Auth
+- **Charts:** Recharts
+- **Hosting:** Vercel (önerilen)
+
+## Kurulum
+
+### 1. Projeyi Klonlayın
+
+```bash
+cd kasa-takip
+```
+
+### 2. Bağımlılıkları Yükleyin
+
+```bash
+npm install
+```
+
+### 3. Supabase Kurulumu
+
+1. [Supabase.com](https://supabase.com) adresinden ücretsiz hesap oluşturun
+2. Yeni bir proje oluşturun
+3. Proje ayarlarından API anahtarlarınızı alın
+4. `supabase/schema.sql` dosyasındaki SQL komutlarını Supabase SQL Editor'da çalıştırın
+
+### 4. Çevre Değişkenleri
+
+`.env.local` dosyasını düzenleyin:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### 5. Uygulamayı Çalıştırın
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Uygulama `http://localhost:3000` adresinde çalışacaktır.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deployment (Vercel)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. GitHub'a projeyi yükleyin
+2. [Vercel.com](https://vercel.com) hesabı oluşturun
+3. GitHub reponuzu Vercel'e bağlayın
+4. Çevre değişkenlerini Vercel dashboard'dan ekleyin
+5. Deploy edin!
 
-## Learn More
+## Kullanım
 
-To learn more about Next.js, take a look at the following resources:
+1. **Kayıt Ol:** Email ve şifre ile üye olun
+2. **Giriş Yap:** Hesabınıza giriş yapın
+3. **İşlem Ekle:** Gelir veya gider ekleyin
+4. **Raporları İncele:** Grafikler ve detaylı raporları görüntüleyin
+5. **Dışa Aktar:** İstediğiniz tarih aralığındaki verileri CSV olarak indirin
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Proje Yapısı
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+kasa-takip/
+├── app/                    # Next.js app dizini
+│   ├── dashboard/         # Dashboard sayfaları
+│   │   ├── layout.tsx    # Dashboard layout
+│   │   ├── page.tsx      # Ana dashboard
+│   │   ├── transactions/ # İşlemler sayfaları
+│   │   └── reports/      # Raporlar sayfası
+│   ├── login/            # Giriş sayfası
+│   ├── signup/           # Kayıt sayfası
+│   └── page.tsx          # Ana sayfa
+├── lib/                   # Yardımcı fonksiyonlar
+│   └── supabase/         # Supabase bağlantıları
+├── types/                # TypeScript tip tanımlamaları
+└── supabase/             # Veritabanı şeması
+```
 
-## Deploy on Vercel
+## Veritabanı Şeması
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Tablolar
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **categories:** Gelir/gider kategorileri
+- **transactions:** İşlem kayıtları
+
+### Özellikler
+
+- Row Level Security (RLS) ile veri güvenliği
+- Otomatik varsayılan kategori oluşturma
+- Timestamp yönetimi
+
+## Lisans
+
+MIT
+
+## Destek
+
+Herhangi bir sorun veya öneri için issue açabilirsiniz.

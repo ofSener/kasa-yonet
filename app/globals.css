@@ -12,15 +12,42 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Form elementleri için global stiller */
+input, select, textarea {
+  color: #111827 !important;
+  background-color: white !important;
+}
+
+/* Placeholder renkleri */
+input::placeholder,
+textarea::placeholder {
+  color: #4b5563 !important;
+  opacity: 1 !important;
+}
+
+/* Label renkleri */
+label {
+  color: #111827 !important;
+}
+
+/* Tüm text elementleri için koyu renk */
+p, span, div {
+  color: #111827;
+}
+
+/* Başlıklar için koyu renk */
+h1, h2, h3, h4, h5, h6 {
+  color: #111827 !important;
+}
+
+/* Select option renkleri */
+select option {
+  color: #111827 !important;
+  background-color: white !important;
 }
